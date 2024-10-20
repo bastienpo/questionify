@@ -2,35 +2,30 @@ package server
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-type Server struct {
-	port int
-}
-
-func NewServer() *http.Server {
+func NewServer(logger *slog.Logger) *http.Server {
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("failed to parse port", "error", err)
 		return nil
 	}
 
-	NewServer := &Server{
-		port: port,
-	}
+	router := httprouter.New()
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      NewServer.addRoutes(),
+		Handler:      addRoutes(router, logger),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
-		// ErrorLog:     slog.NewLogLogger(logger, slog.LevelError),
 	}
 
 	return server

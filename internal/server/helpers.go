@@ -5,14 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"maps"
 	"net/http"
 	"strings"
 )
 
-func readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
-	// Limit the request body size to 1MB
-	max_bytes := 1_048_576
+type envelope map[string]any
+
+func readJSON[T any](w http.ResponseWriter, r *http.Request, dst *T) error {
+	max_bytes := 1_048_576 // Limit the request body size to 1MB
 	r.Body = http.MaxBytesReader(w, r.Body, int64(max_bytes))
 
 	dec := json.NewDecoder(r.Body)
@@ -65,7 +67,7 @@ func readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	return nil
 }
 
-func writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
+func writeJSON[T any](w http.ResponseWriter, status int, data T, headers http.Header) error {
 	js, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -78,4 +80,29 @@ func writeJSON(w http.ResponseWriter, status int, data any, headers http.Header)
 	w.Write(js)
 
 	return nil
+}
+
+func logError(logger *slog.Logger, r *http.Request, err error) {
+	var (
+		method = r.Method
+		uri    = r.URL.RequestURI()
+	)
+
+	logger.Error(err.Error(), "method", method, "uri", uri)
+}
+
+func errorResponse(logger *slog.Logger, w http.ResponseWriter, r *http.Request, status int, message string) {
+	data := envelope{"error": message}
+
+	err := writeJSON(w, status, data, nil)
+	if err != nil {
+		logError(logger, r, err)
+		w.WriteHeader(500)
+	}
+}
+
+func serverErrorResponse(logger *slog.Logger, w http.ResponseWriter, r *http.Request, err error) {
+	logError(logger, r, err)
+	msg := "the server encountered a problem and could not process your request"
+	errorResponse(logger, w, r, http.StatusInternalServerError, msg)
 }
