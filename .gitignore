@@ -20,6 +20,12 @@
 # Go workspace file
 go.work
 go.work.sum
+tmp/
+
+# IDE specific files
+.vscode
+.idea
 
 # env file
 .env
+.envrc
