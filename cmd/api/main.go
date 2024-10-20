@@ -6,8 +6,6 @@ import (
 	"questionify/internal/server"
 )
 
-var version = "1.0.0"
-
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
