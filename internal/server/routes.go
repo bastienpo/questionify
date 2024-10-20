@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 )
 
 func (s *Server) addRoutes() http.Handler {
@@ -12,7 +13,9 @@ func (s *Server) addRoutes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", healthGetHandler)
 
-	return router
+	standard := alice.New(recoverPanic, logRequest)
+
+	return standard.Then(router)
 }
 
 func healthGetHandler(w http.ResponseWriter, r *http.Request) {
