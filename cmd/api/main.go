@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"questionify/internal/database"
+	database "questionify/internal/data"
 	"questionify/internal/server"
 	"syscall"
 	"time"
