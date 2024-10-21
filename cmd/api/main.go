@@ -22,7 +22,8 @@ func gracefulShutdown(ctx context.Context, srv *http.Server, done chan struct{},
 
 	logger.Info("Shutting down server")
 
-	ctx, cancel = context.WithTimeout(ctx, 20*time.Second)
+	// allow for requests to complete
+	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {

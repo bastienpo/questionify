@@ -12,7 +12,11 @@ import (
 func addRoutes(router *httprouter.Router, logger *slog.Logger) http.Handler {
 	router.Handler(http.MethodGet, "/v1/healthcheck", healthGETHandler())
 
-	standard := alice.New(recoverPanicMiddleware(logger), logRequestMiddleware(logger))
+	standard := alice.New(
+		recoverPanicMiddleware(logger),
+		enableCORS(),
+		logRequestMiddleware(logger),
+	)
 
 	return standard.Then(router)
 }
