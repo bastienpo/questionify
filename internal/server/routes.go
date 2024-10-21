@@ -18,7 +18,7 @@ func addRoutes(router *httprouter.Router, logger *slog.Logger) http.Handler {
 
 	standard := alice.New(
 		recoverPanicMiddleware(logger),
-		enableCORS(),
+		enableCORSMiddleware(),
 		logRequestMiddleware(logger),
 	)
 
