@@ -41,7 +41,12 @@ func methodNotAllowedHandler(logger *slog.Logger) http.Handler {
 
 func healthGETHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data := map[string]string{"status": "available", "environment": os.Getenv("ENVIRONMENT")}
+		env := os.Getenv("ENVIRONMENT")
+		if env == "" {
+			env = "development"
+		}
+
+		data := map[string]string{"status": "available", "environment": env}
 
 		err := writeJSON(w, http.StatusOK, data, nil)
 		if err != nil {
