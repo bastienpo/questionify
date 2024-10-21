@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"questionify/internal/database"
 	"questionify/internal/server"
 	"syscall"
 	"time"
@@ -37,6 +38,17 @@ func gracefulShutdown(ctx context.Context, srv *http.Server, done chan struct{},
 
 func run(ctx context.Context, w io.Writer, args []string) error {
 	logger := slog.New(slog.NewTextHandler(w, nil))
+
+	// Connect to the database
+	db, err := database.New(logger)
+	if err != nil {
+		logger.Error("failed to create database", "error", err)
+		return fmt.Errorf("failed to create database: %s", err)
+	}
+
+	defer db.Close()
+
+	// Create the HTTP server
 	srv := server.NewServer(logger)
 
 	done := make(chan struct{})
@@ -44,10 +56,12 @@ func run(ctx context.Context, w io.Writer, args []string) error {
 
 	logger.Info("Starting server", "port", srv.Addr)
 
+	// Start the HTTP server and listen for requests
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("http server error: %s", err)
 	}
 
+	// Wait for the shutdown signal
 	<-done
 	return nil
 }
