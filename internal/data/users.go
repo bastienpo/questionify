@@ -221,3 +221,7 @@ func (m UserModel) Insert(user *User) error {
 
 	return nil
 }
+
+func (m UserModel) GetByEmail(email string) (User, error) {
+	return User{}, nil
+}
