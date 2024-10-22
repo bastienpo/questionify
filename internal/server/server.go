@@ -5,13 +5,14 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"questionify/internal/data"
 	"strconv"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-func NewServer(logger *slog.Logger) *http.Server {
+func NewServer(logger *slog.Logger, modelStore *data.ModelStore) *http.Server {
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 
 	if err != nil {
@@ -23,7 +24,7 @@ func NewServer(logger *slog.Logger) *http.Server {
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      addRoutes(router, logger),
+		Handler:      addRoutes(router, logger, modelStore),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

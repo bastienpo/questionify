@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func recoverPanicMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
+func recoverPanic(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -21,7 +21,7 @@ func recoverPanicMiddleware(logger *slog.Logger) func(http.Handler) http.Handler
 	}
 }
 
-func logRequestMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
+func logRequest(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var (
@@ -37,7 +37,7 @@ func logRequestMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-func enableCORSMiddleware() func(http.Handler) http.Handler {
+func enableCORS() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")

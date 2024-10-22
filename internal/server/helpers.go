@@ -91,7 +91,7 @@ func logError(logger *slog.Logger, r *http.Request, err error) {
 	logger.Error(err.Error(), "method", method, "uri", uri)
 }
 
-func errorResponse(logger *slog.Logger, w http.ResponseWriter, r *http.Request, status int, message string) {
+func errorResponse(logger *slog.Logger, w http.ResponseWriter, r *http.Request, status int, message any) {
 	data := envelope{"error": message}
 
 	err := writeJSON(w, status, data, nil)
@@ -105,4 +105,9 @@ func serverErrorResponse(logger *slog.Logger, w http.ResponseWriter, r *http.Req
 	logError(logger, r, err)
 	msg := "the server encountered a problem and could not process your request"
 	errorResponse(logger, w, r, http.StatusInternalServerError, msg)
+}
+
+func validationErrorResponse(logger *slog.Logger, w http.ResponseWriter, r *http.Request, errors map[string]string) {
+
+	errorResponse(logger, w, r, http.StatusBadRequest, errors)
 }

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
+	"questionify/internal/data"
 	database "questionify/internal/data"
 	"questionify/internal/server"
 	"syscall"
@@ -40,7 +42,7 @@ func run(ctx context.Context, w io.Writer, args []string) error {
 	logger := slog.New(slog.NewTextHandler(w, nil))
 
 	// Connect to the database
-	db, err := database.New(logger)
+	db, err := database.NewDatabase(logger)
 	if err != nil {
 		logger.Error("failed to create database", "error", err)
 		return fmt.Errorf("failed to create database: %s", err)
@@ -48,8 +50,9 @@ func run(ctx context.Context, w io.Writer, args []string) error {
 
 	defer db.Close()
 
-	// Create the HTTP server
-	srv := server.NewServer(logger)
+	// Use type assertion on the concrete type
+	modelStore := data.NewModelStore(db)
+	srv := server.NewServer(logger, modelStore)
 
 	done := make(chan struct{})
 	go gracefulShutdown(ctx, srv, done, logger)

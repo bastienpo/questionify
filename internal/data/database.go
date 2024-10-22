@@ -10,18 +10,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type Database interface {
-	Close() error
-}
+var dbInstance *sql.DB
 
-type database struct {
-	db     *sql.DB
-	logger *slog.Logger
-}
-
-var dbInstance *database
-
-func New(logger *slog.Logger) (Database, error) {
+func NewDatabase(logger *slog.Logger) (*sql.DB, error) {
 	if dbInstance != nil {
 		return dbInstance, nil
 	}
@@ -42,11 +33,6 @@ func New(logger *slog.Logger) (Database, error) {
 
 	logger.Info("Connected to postgresql database")
 
-	dbInstance = &database{db: db, logger: logger}
+	dbInstance = db
 	return dbInstance, nil
-}
-
-func (d *database) Close() error {
-	d.logger.Info("Closing database connection")
-	return d.db.Close()
 }
