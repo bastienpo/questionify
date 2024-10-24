@@ -8,6 +8,7 @@ import (
 	"os"
 	"questionify/internal/data"
 	"questionify/internal/validator"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
@@ -22,6 +23,7 @@ func addRoutes(router *httprouter.Router, logger *slog.Logger, modelStore *data.
 
 	// Users
 	router.Handler(http.MethodPost, "/v1/users", registerUserPost(logger, modelStore))
+	router.Handler(http.MethodPost, "/v1/tokens/authentication", createAuthenticationToken(logger, modelStore))
 
 	standard := alice.New(
 		recoverPanic(logger),
@@ -107,6 +109,66 @@ func registerUserPost(logger *slog.Logger, modelStore *data.ModelStore) http.Han
 		}
 
 		err = writeJSON(w, http.StatusCreated, user, nil)
+		if err != nil {
+			serverErrorResponse(logger, w, r, err)
+		}
+	})
+}
+
+func createAuthenticationToken(logger *slog.Logger, modelStore *data.ModelStore) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+
+		err := readJSON(w, r, &input)
+		if err != nil {
+			errorResponse(logger, w, r, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		v := validator.New()
+		data.ValidateEmail(v, input.Email)
+		data.ValidatePasswordPlaintext(v, input.Password)
+
+		if !v.Valid() {
+			validationErrorResponse(logger, w, r, v.Errors)
+			return
+		}
+
+		user, err := modelStore.Users.GetByEmail(input.Email)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				v.AddError("email", "no matching email address found")
+				validationErrorResponse(logger, w, r, v.Errors)
+			default:
+				serverErrorResponse(logger, w, r, err)
+			}
+			return
+		}
+
+		match, err := user.Password.Matches(input.Password)
+		if err != nil {
+			serverErrorResponse(logger, w, r, err)
+			return
+		}
+
+		if !match {
+			v.AddError("password", "invalid password")
+			validationErrorResponse(logger, w, r, v.Errors)
+			return
+		}
+
+		// If the password matches, generate a new token and send it back to the client in a JSON response.
+		token, err := modelStore.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
+		if err != nil {
+			serverErrorResponse(logger, w, r, err)
+			return
+		}
+
+		err = writeJSON(w, http.StatusCreated, token, nil)
 		if err != nil {
 			serverErrorResponse(logger, w, r, err)
 		}
